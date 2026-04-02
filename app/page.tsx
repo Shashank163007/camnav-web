@@ -19,7 +19,7 @@ export default function CamNavPage() {
   const { initialize, runInference, isInitialized } = useYolo();
 
   useEffect(() => {
-    // Load the model from your public folder
+    // This loads the model you just pushed to your public folder
     initialize('/yolov8n.onnx')
       .then(() => setStatus("System Active"))
       .catch((err) => setStatus("Error loading model: " + err.message));
@@ -39,10 +39,15 @@ export default function CamNavPage() {
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
 
+      // 1. Run the AI detection
       const detections = await runInference(video);
+
+      // 2. Prepare canvas for new drawing
       ctx.clearRect(0, 0, canvas.width, canvas.height);
+
       let dangerDetected = false;
 
+      // 3. Draw boxes and check for collision risks
       detections.forEach(det => {
         const scaledBbox = scaleBoundingBox(
           det, 
@@ -56,9 +61,11 @@ export default function CamNavPage() {
                          isHighRiskDetection(det, scaledBbox, canvas.width, canvas.height);
 
         if (isDanger) dangerDetected = true;
+
         drawBoundingBox(ctx, scaledBbox, det, isDanger);
       });
 
+      // 4. Trigger Alerts
       if (dangerDetected) {
         triggerAudioAlert("STOP: Obstacle Ahead");
         triggerVibration();
@@ -74,6 +81,7 @@ export default function CamNavPage() {
 
   return (
     <main className="relative flex h-screen w-screen flex-col items-center justify-center bg-black overflow-hidden">
+      {/* System Status Display */}
       <div className="absolute top-0 z-20 w-full bg-black/60 p-4 text-center">
         <h1 className="text-xl font-bold tracking-widest text-white uppercase">CamNav v1.0</h1>
         <p className={`text-sm ${status === "System Active" ? "text-green-400" : "text-yellow-400"}`}>
@@ -81,6 +89,7 @@ export default function CamNavPage() {
         </p>
       </div>
 
+      {/* Live Video Feed */}
       <div className="relative h-full w-full max-w-4xl border-x border-zinc-800">
         <Webcam
           ref={webcamRef}
@@ -97,6 +106,7 @@ export default function CamNavPage() {
         />
       </div>
 
+      {/* Danger Zone Overlay */}
       <div className="absolute bottom-0 w-full h-1/2 border-t-2 border-dashed border-red-500/20 pointer-events-none z-10 flex items-center justify-center">
         <span className="text-red-500/20 font-bold uppercase tracking-tighter text-4xl">Collision Zone</span>
       </div>
